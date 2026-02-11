@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Translator - 视频翻译工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .progress-container.active {
+            display: block;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .status-text {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .result-container {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .result-container.active {
+            display: block;
+        }
+
+        .result-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 15px;
+            line-height: 1.8;
+            color: #333;
+        }
+
+        .result-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-secondary {
+            flex: 1;
+            padding: 12px;
+            background: #f0f0f0;
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .error-message {
+            display: none;
+            background: #fee;
+            color: #c00;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        .features {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .feature {
+            text-align: center;
+            color: #888;
+            font-size: 12px;
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Video Translator</h1>
+        <p class="subtitle">将视频内容转录并翻译为目标语言</p>
+
+        <form id="translateForm">
+            <div class="form-group">
+                <label for="videoUrl">视频链接</label>
+                <input type="text" id="videoUrl" placeholder="输入视频 URL，如 https://example.com/video.mp4" required>
+            </div>
+
+            <div class="form-group">
+                <label for="targetLang">目标语言</label>
+                <select id="targetLang">
+                    <option value="zh">中文</option>
+                    <option value="en">English</option>
+                    <option value="ja">日本語</option>
+                    <option value="ko">한국어</option>
+                    <option value="fr">Français</option>
+                    <option value="de">Deutsch</option>
+                    <option value="es">Español</option>
+                    <option value="ru">Русский</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn" id="submitBtn">开始翻译</button>
+        </form>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p class="status-text" id="statusText">准备中...</p>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="result-container" id="resultContainer">
+            <label>翻译结果</label>
+            <div class="result-box" id="resultBox"></div>
+            <div class="result-actions">
+                <button class="btn-secondary" onclick="copyResult()">📋 复制文本</button>
+                <button class="btn-secondary" onclick="downloadResult()">💾 下载文件</button>
+                <button class="btn-secondary" onclick="resetForm()">🔄 重新翻译</button>
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">🎤</div>
+                <div>语音识别</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🌐</div>
+                <div>多语言翻译</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">⚡</div>
+                <div>快速处理</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('translateForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const statusText = document.getElementById('statusText');
+        const errorMessage = document.getElementById('errorMessage');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultBox = document.getElementById('resultBox');
+
+        let currentTaskId = null;
+        let pollInterval = null;
+
+        const statusMessages = {
+            'pending': '任务排队中...',
+            'downloading': '正在下载视频...',
+            'extracting': '正在提取音频...',
+            'transcribing': '正在转录语音...',
+            'translating': '正在翻译文本...',
+            'done': '翻译完成！',
+            'error': '处理出错'
+        };
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const url = document.getElementById('videoUrl').value.trim();
+            const lang = document.getElementById('targetLang').value;
+
+            if (!url) {
+                showError('请输入视频链接');
+                return;
+            }
+
+            // 重置状态
+            hideError();
+            resultContainer.classList.remove('active');
+            progressContainer.classList.add('active');
+            progressFill.style.width = '0%';
+            statusText.textContent = '正在创建任务...';
+            submitBtn.disabled = true;
+
+            try {
+                // 创建任务
+                const response = await fetch('/api/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, lang })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || '创建任务失败');
+                }
+
+                currentTaskId = data.id;
+                startPolling();
+
+            } catch (err) {
+                showError(err.message);
+                progressContainer.classList.remove('active');
+                submitBtn.disabled = false;
+            }
+        });
+
+        function startPolling() {
+            pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/task/${currentTaskId}`);
+                    const task = await response.json();
+
+                    progressFill.style.width = task.progress + '%';
+                    statusText.textContent = statusMessages[task.status] || task.status;
+
+                    if (task.status === 'done') {
+                        stopPolling();
+                        showResult(task.result);
+                    } else if (task.status === 'error') {
+                        stopPolling();
+                        showError(task.error || '处理失败');
+                        progressContainer.classList.remove('active');
+                        submitBtn.disabled = false;
+                    }
+
+                } catch (err) {
+                    stopPolling();
+                    showError('获取任务状态失败');
+                    progressContainer.classList.remove('active');
+                    submitBtn.disabled = false;
+                }
+            }, 1000);
+        }
+
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        }
+
+        function showResult(text) {
+            progressContainer.classList.remove('active');
+            resultContainer.classList.add('active');
+            resultBox.textContent = text;
+            submitBtn.disabled = false;
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('active');
+        }
+
+        function hideError() {
+            errorMessage.classList.remove('active');
+        }
+
+        function copyResult() {
+            navigator.clipboard.writeText(resultBox.textContent).then(() => {
+                alert('已复制到剪贴板');
+            });
+        }
+
+        function downloadResult() {
+            const blob = new Blob([resultBox.textContent], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'translation.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function resetForm() {
+            resultContainer.classList.remove('active');
+            document.getElementById('videoUrl').value = '';
+            currentTaskId = null;
+        }
+    </script>
+</body>
+</html>
