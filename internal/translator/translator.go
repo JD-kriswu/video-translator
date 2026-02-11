@@ -7,20 +7,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+
+	"github.com/JD-kriswu/video-translator/internal/config"
 )
-
-// Config 翻译配置
-type Config struct {
-	APIKey  string
-	BaseURL string
-	Model   string
-}
-
-// DefaultConfig 默认配置
-var DefaultConfig = Config{
-	BaseURL: "https://api.openai.com/v1",
-	Model:   "gpt-4o-mini",
-}
 
 // ChatRequest OpenAI Chat API 请求
 type ChatRequest struct {
@@ -42,27 +31,22 @@ type ChatResponse struct {
 }
 
 // Translate 翻译文本
-func Translate(text, targetLang string) (string, error) {
-	config := DefaultConfig
-	
-	// 从环境变量获取 API Key
-	config.APIKey = os.Getenv("OPENAI_API_KEY")
-	if config.APIKey == "" {
-		return "", fmt.Errorf("请设置 OPENAI_API_KEY 环境变量")
+func Translate(text, targetLang string, cfg *config.TranslatorConfig) (string, error) {
+	// 如果配置为空，使用环境变量
+	if cfg.APIKey == "" {
+		cfg.APIKey = os.Getenv("OPENAI_API_KEY")
+	}
+	if cfg.APIKey == "" {
+		return "", fmt.Errorf("请在配置文件中设置 api_key 或设置 OPENAI_API_KEY 环境变量")
 	}
 
-	return translateWithOpenAI(text, targetLang, config)
-}
-
-// TranslateWithConfig 使用自定义配置翻译
-func TranslateWithConfig(text, targetLang string, config Config) (string, error) {
-	return translateWithOpenAI(text, targetLang, config)
+	return translateWithOpenAI(text, targetLang, cfg)
 }
 
 // translateWithOpenAI 使用 OpenAI API 翻译
-func translateWithOpenAI(text, targetLang string, config Config) (string, error) {
+func translateWithOpenAI(text, targetLang string, cfg *config.TranslatorConfig) (string, error) {
 	langName := getLanguageName(targetLang)
-	
+
 	prompt := fmt.Sprintf(`请将以下文本翻译成%s。要求：
 1. 保持原文的语气和风格
 2. 专业术语翻译准确
@@ -73,7 +57,7 @@ func translateWithOpenAI(text, targetLang string, config Config) (string, error)
 %s`, langName, text)
 
 	reqBody := ChatRequest{
-		Model: config.Model,
+		Model: cfg.Model,
 		Messages: []Message{
 			{Role: "user", Content: prompt},
 		},
@@ -84,13 +68,13 @@ func translateWithOpenAI(text, targetLang string, config Config) (string, error)
 		return "", fmt.Errorf("序列化请求失败: %w", err)
 	}
 
-	url := config.BaseURL + "/chat/completions"
+	url := cfg.BaseURL + "/chat/completions"
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", fmt.Errorf("创建请求失败: %w", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+config.APIKey)
+	req.Header.Set("Authorization", "Bearer "+cfg.APIKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
@@ -124,18 +108,18 @@ func translateWithOpenAI(text, targetLang string, config Config) (string, error)
 // getLanguageName 获取语言名称
 func getLanguageName(code string) string {
 	languages := map[string]string{
-		"zh":    "中文",
-		"en":    "英文",
-		"ja":    "日文",
-		"ko":    "韩文",
-		"fr":    "法文",
-		"de":    "德文",
-		"es":    "西班牙文",
-		"ru":    "俄文",
-		"pt":    "葡萄牙文",
-		"it":    "意大利文",
+		"zh": "中文",
+		"en": "英文",
+		"ja": "日文",
+		"ko": "韩文",
+		"fr": "法文",
+		"de": "德文",
+		"es": "西班牙文",
+		"ru": "俄文",
+		"pt": "葡萄牙文",
+		"it": "意大利文",
 	}
-	
+
 	if name, ok := languages[code]; ok {
 		return name
 	}

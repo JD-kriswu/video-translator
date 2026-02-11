@@ -9,20 +9,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/JD-kriswu/video-translator/internal/config"
 )
-
-// Config 转录配置
-type Config struct {
-	APIKey   string
-	BaseURL  string
-	Model    string
-}
-
-// DefaultConfig 默认配置（使用 OpenAI Whisper API）
-var DefaultConfig = Config{
-	BaseURL: "https://api.openai.com/v1",
-	Model:   "whisper-1",
-}
 
 // TranscriptionResponse Whisper API 响应
 type TranscriptionResponse struct {
@@ -30,25 +19,20 @@ type TranscriptionResponse struct {
 }
 
 // Transcribe 将音频转录为文字
-func Transcribe(audioPath string) (string, error) {
-	config := DefaultConfig
-	
-	// 从环境变量获取 API Key
-	config.APIKey = os.Getenv("OPENAI_API_KEY")
-	if config.APIKey == "" {
-		return "", fmt.Errorf("请设置 OPENAI_API_KEY 环境变量")
+func Transcribe(audioPath string, cfg *config.TranscriberConfig) (string, error) {
+	// 如果配置为空，使用环境变量
+	if cfg.APIKey == "" {
+		cfg.APIKey = os.Getenv("OPENAI_API_KEY")
+	}
+	if cfg.APIKey == "" {
+		return "", fmt.Errorf("请在配置文件中设置 api_key 或设置 OPENAI_API_KEY 环境变量")
 	}
 
-	return transcribeWithWhisper(audioPath, config)
-}
-
-// TranscribeWithConfig 使用自定义配置转录
-func TranscribeWithConfig(audioPath string, config Config) (string, error) {
-	return transcribeWithWhisper(audioPath, config)
+	return transcribeWithWhisper(audioPath, cfg)
 }
 
 // transcribeWithWhisper 调用 Whisper API
-func transcribeWithWhisper(audioPath string, config Config) (string, error) {
+func transcribeWithWhisper(audioPath string, cfg *config.TranscriberConfig) (string, error) {
 	// 打开音频文件
 	file, err := os.Open(audioPath)
 	if err != nil {
@@ -70,20 +54,20 @@ func transcribeWithWhisper(audioPath string, config Config) (string, error) {
 	}
 
 	// 添加模型参数
-	if err := writer.WriteField("model", config.Model); err != nil {
+	if err := writer.WriteField("model", cfg.Model); err != nil {
 		return "", fmt.Errorf("写入模型参数失败: %w", err)
 	}
 
 	writer.Close()
 
 	// 发送请求
-	url := config.BaseURL + "/audio/transcriptions"
+	url := cfg.BaseURL + "/audio/transcriptions"
 	req, err := http.NewRequest("POST", url, &buf)
 	if err != nil {
 		return "", fmt.Errorf("创建请求失败: %w", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+config.APIKey)
+	req.Header.Set("Authorization", "Bearer "+cfg.APIKey)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	client := &http.Client{}

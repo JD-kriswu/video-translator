@@ -1,0 +1,14 @@
+{
+  "transcriber": {
+    "provider": "openai",
+    "base_url": "https://api.openai.com/v1",
+    "api_key": "your-api-key-here",
+    "model": "whisper-1"
+  },
+  "translator": {
+    "provider": "openai",
+    "base_url": "https://api.openai.com/v1",
+    "api_key": "your-api-key-here",
+    "model": "gpt-4o-mini"
+  }
+}
