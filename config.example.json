@@ -1,9 +1,7 @@
 {
   "transcriber": {
-    "provider": "openai",
-    "base_url": "https://api.openai.com/v1",
-    "api_key": "your-api-key-here",
-    "model": "whisper-1"
+    "provider": "local",
+    "model": "base"
   },
   "translator": {
     "provider": "openai",
