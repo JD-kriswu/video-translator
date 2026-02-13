@@ -1,0 +1,19 @@
+{
+  "name": "video-translator",
+  "version": "1.0.0",
+  "description": "将视频链接转化为长文本，并翻译为目标语言的工具。支持 CLI 和 Web 两种使用方式。",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitclone.com/github.com/JD-kriswu/video-translator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "playwright": "^1.58.2"
+  }
+}

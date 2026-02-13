@@ -28,7 +28,7 @@ func ExtractAudio(videoPath string) (string, error) {
 	cmd := exec.Command("ffmpeg",
 		"-i", videoPath,
 		"-vn",
-		"-acodec", "mp3",
+		"-acodec", "libmp3lame",
 		"-ar", "16000",
 		"-ac", "1",
 		"-y",

@@ -58,7 +58,6 @@ func transcribeWithLocalWhisper(audioPath string, cfg *config.TranscriberConfig)
 		"--model", model,
 		"--output_format", "txt",
 		"--output_dir", outputDir,
-		"--language", "auto", // 自动检测语言
 	)
 
 	// 执行命令

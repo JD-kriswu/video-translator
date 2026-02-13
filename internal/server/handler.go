@@ -16,13 +16,16 @@ import (
 
 // Task 翻译任务
 type Task struct {
-	ID       string `json:"id"`
-	URL      string `json:"url"`
-	Lang     string `json:"lang"`
-	Status   string `json:"status"` // pending, downloading, extracting, transcribing, translating, done, error
-	Progress int    `json:"progress"`
-	Result   string `json:"result,omitempty"`
-	Error    string `json:"error,omitempty"`
+	ID         string `json:"id"`
+	URL        string `json:"url"`
+	Lang       string `json:"lang"`
+	Status     string `json:"status"` // pending, downloading, extracting, transcribing, translating, done, error
+	Progress   int    `json:"progress"`
+	VideoPath  string `json:"video_path,omitempty"`
+	AudioPath  string `json:"audio_path,omitempty"`
+	Transcript string `json:"transcript,omitempty"` // 原始转录文本
+	Result     string `json:"result,omitempty"`     // 翻译结果
+	Error      string `json:"error,omitempty"`
 }
 
 // 任务存储
@@ -90,6 +93,37 @@ func GetTaskStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, task)
 }
 
+// ResumeTask 继续执行任务
+func ResumeTask(cfg *config.Config) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Param("id")
+
+		tasksMu.RLock()
+		task, exists := tasks[id]
+		tasksMu.RUnlock()
+
+		if !exists {
+			c.JSON(http.StatusNotFound, gin.H{"error": "任务不存在"})
+			return
+		}
+
+		if task.Status != "error" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "任务状态不是错误，无需继续"})
+			return
+		}
+
+		// 重置错误状态，继续执行
+		tasksMu.Lock()
+		task.Status = "pending"
+		task.Error = ""
+		tasksMu.Unlock()
+
+		go processTask(task, cfg)
+
+		c.JSON(http.StatusOK, gin.H{"message": "任务已继续执行"})
+	}
+}
+
 // GetTaskResult 获取任务结果
 func GetTaskResult(c *gin.Context) {
 	id := c.Param("id")
@@ -129,45 +163,64 @@ func processTask(task *Task, cfg *config.Config) {
 		tasksMu.Unlock()
 	}
 
-	// 1. 下载视频
-	updateTask("downloading", 10)
-	videoPath, err := downloader.Download(task.URL)
-	if err != nil {
-		setError(err)
-		return
+	// 1. 下载视频（如果还没下载）
+	if task.VideoPath == "" {
+		updateTask("downloading", 10)
+		videoPath, err := downloader.Download(task.URL)
+		if err != nil {
+			setError(err)
+			return
+		}
+		tasksMu.Lock()
+		task.VideoPath = videoPath
+		tasksMu.Unlock()
 	}
 	updateTask("downloading", 30)
 
-	// 2. 提取音频
-	updateTask("extracting", 40)
-	audioPath, err := extractor.ExtractAudio(videoPath)
-	if err != nil {
-		setError(err)
-		return
+	// 2. 提取音频（如果还没提取）
+	if task.AudioPath == "" {
+		updateTask("extracting", 40)
+		audioPath, err := extractor.ExtractAudio(task.VideoPath)
+		if err != nil {
+			setError(err)
+			return
+		}
+		tasksMu.Lock()
+		task.AudioPath = audioPath
+		tasksMu.Unlock()
 	}
 	updateTask("extracting", 50)
 
-	// 3. 语音转文字
-	updateTask("transcribing", 60)
-	text, err := transcriber.Transcribe(audioPath, &cfg.Transcriber)
-	if err != nil {
-		setError(err)
-		return
+	// 3. 语音转文字（如果还没转录）
+	if task.Transcript == "" {
+		updateTask("transcribing", 60)
+		text, err := transcriber.Transcribe(task.AudioPath, &cfg.Transcriber)
+		if err != nil {
+			setError(err)
+			return
+		}
+		tasksMu.Lock()
+		task.Transcript = text
+		tasksMu.Unlock()
 	}
 	updateTask("transcribing", 80)
 
-	// 4. 翻译
-	updateTask("translating", 85)
-	translated, err := translator.Translate(text, task.Lang, &cfg.Translator)
-	if err != nil {
-		setError(err)
-		return
+	// 4. 翻译（如果还没翻译）
+	if task.Result == "" {
+		updateTask("translating", 85)
+		translated, err := translator.Translate(task.Transcript, task.Lang, &cfg.Translator)
+		if err != nil {
+			setError(err)
+			return
+		}
+		tasksMu.Lock()
+		task.Result = translated
+		tasksMu.Unlock()
 	}
 
 	// 完成
 	tasksMu.Lock()
 	task.Status = "done"
 	task.Progress = 100
-	task.Result = translated
 	tasksMu.Unlock()
 }

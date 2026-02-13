@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/JD-kriswu/video-translator/internal/config"
 )
@@ -102,7 +103,29 @@ func translateWithOpenAI(text, targetLang string, cfg *config.TranslatorConfig) 
 		return "", fmt.Errorf("API 返回空结果")
 	}
 
-	return result.Choices[0].Message.Content, nil
+	content := result.Choices[0].Message.Content
+	
+	// 过滤掉 <think>...</think> 标签
+	content = removeThinkTags(content)
+	
+	return strings.TrimSpace(content), nil
+}
+
+// removeThinkTags 移除 <think>...</think> 标签
+func removeThinkTags(text string) string {
+	// 简单的正则替换
+	for {
+		start := strings.Index(text, "<think>")
+		if start == -1 {
+			break
+		}
+		end := strings.Index(text, "</think>")
+		if end == -1 {
+			break
+		}
+		text = text[:start] + text[end+8:]
+	}
+	return text
 }
 
 // getLanguageName 获取语言名称

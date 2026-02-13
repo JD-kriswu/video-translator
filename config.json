@@ -1,0 +1,12 @@
+{
+  "transcriber": {
+    "provider": "local",
+    "model": "base"
+  },
+  "translator": {
+    "provider": "openai",
+    "base_url": "https://www.packyapi.com/v1",
+    "api_key": "sk-ObFst5RhIRlc4mjnVSBCdtWdVzI9Gk0AFuO3YTrtOSvckTNO",
+    "model": "gpt-5-codex-mini"
+  }
+}

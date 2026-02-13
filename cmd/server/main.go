@@ -43,12 +43,15 @@ func main() {
 		// 查询任务状态
 		api.GET("/task/:id", server.GetTaskStatus)
 
+		// 继续执行任务
+		api.POST("/task/:id/resume", server.ResumeTask(cfg))
+
 		// 获取任务结果
 		api.GET("/task/:id/result", server.GetTaskResult)
 	}
 
 	// 启动服务
-	port := ":8080"
+	port := ":80"
 	log.Printf("🚀 服务启动: http://localhost%s", port)
 	if err := r.Run(port); err != nil {
 		log.Fatalf("启动失败: %v", err)

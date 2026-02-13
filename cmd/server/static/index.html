@@ -5,217 +5,152 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Video Translator - 视频翻译工具</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             padding: 20px;
         }
-
         .container {
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 40px;
+            padding: 30px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 { text-align: center; color: #333; margin-bottom: 8px; font-size: 26px; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 25px; font-size: 14px; }
+        
+        .form-row { display: flex; gap: 15px; margin-bottom: 20px; }
+        .form-group { flex: 1; }
+        .form-group.small { flex: 0 0 150px; }
+        label { display: block; margin-bottom: 6px; color: #333; font-weight: 500; font-size: 14px; }
+        input[type="text"], select {
             width: 100%;
-            max-width: 600px;
-        }
-
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 500;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 14px 16px;
+            padding: 12px 14px;
             border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
+            border-radius: 8px;
+            font-size: 15px;
             transition: border-color 0.3s;
         }
-
-        input[type="text"]:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        select {
-            width: 100%;
-            padding: 14px 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            background: white;
-            cursor: pointer;
-        }
-
-        select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
+        input:focus, select:focus { outline: none; border-color: #667eea; }
+        
         .btn {
-            width: 100%;
-            padding: 16px;
+            padding: 14px 28px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 18px;
+            border-radius: 8px;
+            font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
         }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); }
+        .btn:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-sm { padding: 8px 16px; font-size: 13px; }
+        .btn-outline {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
         }
+        .btn-outline:hover { background: #667eea; color: white; }
+        .btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .btn-warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
 
-        .btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
+        /* 步骤指示器 */
+        .steps { display: flex; justify-content: space-between; margin: 25px 0; padding: 0 10px; }
+        .step {
+            display: flex; flex-direction: column; align-items: center;
+            flex: 1; position: relative;
         }
-
-        .progress-container {
-            display: none;
-            margin-top: 30px;
-        }
-
-        .progress-container.active {
-            display: block;
-        }
-
-        .progress-bar {
-            height: 8px;
+        .step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 60%;
+            width: 80%;
+            height: 3px;
             background: #e0e0e0;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-bottom: 10px;
+        }
+        .step.done:not(:last-child)::after { background: #667eea; }
+        .step-icon {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+            position: relative;
+            z-index: 1;
+        }
+        .step.active .step-icon { background: #667eea; color: white; animation: pulse 1.5s infinite; }
+        .step.done .step-icon { background: #667eea; color: white; }
+        .step.error .step-icon { background: #f5576c; color: white; }
+        .step-label { margin-top: 8px; font-size: 12px; color: #666; }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
         }
 
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            width: 0%;
-            transition: width 0.3s;
-        }
-
-        .status-text {
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-        }
-
-        .result-container {
-            display: none;
-            margin-top: 30px;
-        }
-
-        .result-container.active {
-            display: block;
-        }
-
-        .result-box {
+        /* 产物展示区 */
+        .outputs { display: none; margin-top: 25px; }
+        .outputs.active { display: block; }
+        .output-section {
             background: #f8f9fa;
             border-radius: 10px;
-            padding: 20px;
-            max-height: 400px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .output-title { font-weight: 600; color: #333; font-size: 14px; }
+        .output-status {
+            font-size: 12px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            background: #e0e0e0;
+            color: #666;
+        }
+        .output-status.done { background: #d4edda; color: #155724; }
+        .output-status.active { background: #fff3cd; color: #856404; }
+        .output-status.error { background: #f8d7da; color: #721c24; }
+        .output-content {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            max-height: 200px;
             overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.7;
             white-space: pre-wrap;
             word-wrap: break-word;
-            font-size: 15px;
-            line-height: 1.8;
-            color: #333;
         }
+        .output-content.empty { color: #999; font-style: italic; }
+        .output-actions { margin-top: 10px; display: flex; gap: 8px; }
 
-        .result-actions {
-            margin-top: 15px;
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn-secondary {
-            flex: 1;
-            padding: 12px;
-            background: #f0f0f0;
-            color: #333;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .btn-secondary:hover {
-            background: #e0e0e0;
-        }
-
-        .error-message {
-            display: none;
+        .error-box {
             background: #fee;
             color: #c00;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-            text-align: center;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
         }
-
-        .error-message.active {
-            display: block;
-        }
+        .error-box.active { display: flex; justify-content: space-between; align-items: center; }
 
         .features {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
+            display: flex; justify-content: center; gap: 30px;
+            margin-top: 25px; padding-top: 20px; border-top: 1px solid #eee;
         }
-
-        .feature {
-            text-align: center;
-            color: #888;
-            font-size: 12px;
-        }
-
-        .feature-icon {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
+        .feature { text-align: center; color: #888; font-size: 12px; }
+        .feature-icon { font-size: 22px; margin-bottom: 4px; }
     </style>
 </head>
 <body>
@@ -224,126 +159,127 @@
         <p class="subtitle">将视频内容转录并翻译为目标语言</p>
 
         <form id="translateForm">
-            <div class="form-group">
-                <label for="videoUrl">视频链接</label>
-                <input type="text" id="videoUrl" placeholder="输入视频 URL，如 https://example.com/video.mp4" required>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="videoUrl">视频链接</label>
+                    <input type="text" id="videoUrl" placeholder="输入抖音、B站、YouTube 等视频链接" required>
+                </div>
+                <div class="form-group small">
+                    <label for="targetLang">目标语言</label>
+                    <select id="targetLang">
+                        <option value="zh">中文</option>
+                        <option value="en">English</option>
+                        <option value="ja">日本語</option>
+                        <option value="ko">한국어</option>
+                    </select>
+                </div>
+                <div class="form-group small" style="display: flex; align-items: flex-end;">
+                    <button type="submit" class="btn" id="submitBtn">开始翻译</button>
+                </div>
             </div>
-
-            <div class="form-group">
-                <label for="targetLang">目标语言</label>
-                <select id="targetLang">
-                    <option value="zh">中文</option>
-                    <option value="en">English</option>
-                    <option value="ja">日本語</option>
-                    <option value="ko">한국어</option>
-                    <option value="fr">Français</option>
-                    <option value="de">Deutsch</option>
-                    <option value="es">Español</option>
-                    <option value="ru">Русский</option>
-                </select>
-            </div>
-
-            <button type="submit" class="btn" id="submitBtn">开始翻译</button>
         </form>
 
-        <div class="progress-container" id="progressContainer">
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
+        <!-- 步骤指示器 -->
+        <div class="steps" id="stepsContainer" style="display: none;">
+            <div class="step" data-step="downloading">
+                <div class="step-icon">📥</div>
+                <div class="step-label">下载视频</div>
             </div>
-            <p class="status-text" id="statusText">准备中...</p>
+            <div class="step" data-step="extracting">
+                <div class="step-icon">🎵</div>
+                <div class="step-label">提取音频</div>
+            </div>
+            <div class="step" data-step="transcribing">
+                <div class="step-icon">📝</div>
+                <div class="step-label">语音转文字</div>
+            </div>
+            <div class="step" data-step="translating">
+                <div class="step-icon">🌐</div>
+                <div class="step-label">翻译</div>
+            </div>
+            <div class="step" data-step="done">
+                <div class="step-icon">✅</div>
+                <div class="step-label">完成</div>
+            </div>
         </div>
 
-        <div class="error-message" id="errorMessage"></div>
+        <!-- 错误提示 -->
+        <div class="error-box" id="errorBox">
+            <span id="errorText"></span>
+            <button class="btn btn-sm btn-warning" id="resumeBtn" onclick="resumeTask()">继续执行</button>
+        </div>
 
-        <div class="result-container" id="resultContainer">
-            <label>翻译结果</label>
-            <div class="result-box" id="resultBox"></div>
-            <div class="result-actions">
-                <button class="btn-secondary" onclick="copyResult()">📋 复制文本</button>
-                <button class="btn-secondary" onclick="downloadResult()">💾 下载文件</button>
-                <button class="btn-secondary" onclick="resetForm()">🔄 重新翻译</button>
+        <!-- 产物展示 -->
+        <div class="outputs" id="outputsContainer">
+            <div class="output-section" id="videoSection">
+                <div class="output-header">
+                    <span class="output-title">📹 视频文件</span>
+                    <span class="output-status" id="videoStatus">等待中</span>
+                </div>
+                <div class="output-content empty" id="videoPath">等待下载...</div>
+            </div>
+
+            <div class="output-section" id="transcriptSection">
+                <div class="output-header">
+                    <span class="output-title">📝 原始转录</span>
+                    <span class="output-status" id="transcriptStatus">等待中</span>
+                </div>
+                <div class="output-content empty" id="transcriptContent">等待转录...</div>
+                <div class="output-actions" style="display: none;" id="transcriptActions">
+                    <button class="btn btn-sm btn-outline" onclick="copyText('transcriptContent')">复制</button>
+                </div>
+            </div>
+
+            <div class="output-section" id="resultSection">
+                <div class="output-header">
+                    <span class="output-title">🌐 翻译结果</span>
+                    <span class="output-status" id="resultStatus">等待中</span>
+                </div>
+                <div class="output-content empty" id="resultContent">等待翻译...</div>
+                <div class="output-actions" style="display: none;" id="resultActions">
+                    <button class="btn btn-sm btn-outline" onclick="copyText('resultContent')">复制</button>
+                    <button class="btn btn-sm btn-success" onclick="downloadResult()">下载</button>
+                </div>
             </div>
         </div>
 
         <div class="features">
-            <div class="feature">
-                <div class="feature-icon">🎤</div>
-                <div>语音识别</div>
-            </div>
-            <div class="feature">
-                <div class="feature-icon">🌐</div>
-                <div>多语言翻译</div>
-            </div>
-            <div class="feature">
-                <div class="feature-icon">⚡</div>
-                <div>快速处理</div>
-            </div>
+            <div class="feature"><div class="feature-icon">🎤</div><div>Whisper 语音识别</div></div>
+            <div class="feature"><div class="feature-icon">🤖</div><div>GPT 智能翻译</div></div>
+            <div class="feature"><div class="feature-icon">🔄</div><div>断点续传</div></div>
         </div>
     </div>
 
     <script>
-        const form = document.getElementById('translateForm');
-        const submitBtn = document.getElementById('submitBtn');
-        const progressContainer = document.getElementById('progressContainer');
-        const progressFill = document.getElementById('progressFill');
-        const statusText = document.getElementById('statusText');
-        const errorMessage = document.getElementById('errorMessage');
-        const resultContainer = document.getElementById('resultContainer');
-        const resultBox = document.getElementById('resultBox');
-
         let currentTaskId = null;
         let pollInterval = null;
 
-        const statusMessages = {
-            'pending': '任务排队中...',
-            'downloading': '正在下载视频...',
-            'extracting': '正在提取音频...',
-            'transcribing': '正在转录语音...',
-            'translating': '正在翻译文本...',
-            'done': '翻译完成！',
-            'error': '处理出错'
-        };
+        const stepOrder = ['downloading', 'extracting', 'transcribing', 'translating', 'done'];
 
-        form.addEventListener('submit', async (e) => {
+        document.getElementById('translateForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
             const url = document.getElementById('videoUrl').value.trim();
             const lang = document.getElementById('targetLang').value;
+            if (!url) return;
 
-            if (!url) {
-                showError('请输入视频链接');
-                return;
-            }
-
-            // 重置状态
-            hideError();
-            resultContainer.classList.remove('active');
-            progressContainer.classList.add('active');
-            progressFill.style.width = '0%';
-            statusText.textContent = '正在创建任务...';
-            submitBtn.disabled = true;
+            resetUI();
+            document.getElementById('stepsContainer').style.display = 'flex';
+            document.getElementById('outputsContainer').classList.add('active');
+            document.getElementById('submitBtn').disabled = true;
 
             try {
-                // 创建任务
                 const response = await fetch('/api/translate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url, lang })
                 });
-
                 const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || '创建任务失败');
-                }
-
+                if (!response.ok) throw new Error(data.error);
                 currentTaskId = data.id;
                 startPolling();
-
             } catch (err) {
                 showError(err.message);
-                progressContainer.classList.remove('active');
-                submitBtn.disabled = false;
+                document.getElementById('submitBtn').disabled = false;
             }
         });
 
@@ -352,72 +288,134 @@
                 try {
                     const response = await fetch(`/api/task/${currentTaskId}`);
                     const task = await response.json();
+                    updateUI(task);
 
-                    progressFill.style.width = task.progress + '%';
-                    statusText.textContent = statusMessages[task.status] || task.status;
-
-                    if (task.status === 'done') {
+                    if (task.status === 'done' || task.status === 'error') {
                         stopPolling();
-                        showResult(task.result);
-                    } else if (task.status === 'error') {
-                        stopPolling();
-                        showError(task.error || '处理失败');
-                        progressContainer.classList.remove('active');
-                        submitBtn.disabled = false;
+                        document.getElementById('submitBtn').disabled = false;
                     }
-
                 } catch (err) {
                     stopPolling();
-                    showError('获取任务状态失败');
-                    progressContainer.classList.remove('active');
-                    submitBtn.disabled = false;
+                    showError('获取状态失败');
+                    document.getElementById('submitBtn').disabled = false;
                 }
             }, 1000);
         }
 
         function stopPolling() {
-            if (pollInterval) {
-                clearInterval(pollInterval);
-                pollInterval = null;
+            if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+        }
+
+        function updateUI(task) {
+            // 更新步骤
+            const currentIdx = stepOrder.indexOf(task.status);
+            document.querySelectorAll('.step').forEach((step, idx) => {
+                const stepName = step.dataset.step;
+                const stepIdx = stepOrder.indexOf(stepName);
+                step.classList.remove('active', 'done', 'error');
+                if (task.status === 'error' && stepIdx === currentIdx) {
+                    step.classList.add('error');
+                } else if (stepIdx < currentIdx || task.status === 'done') {
+                    step.classList.add('done');
+                } else if (stepIdx === currentIdx) {
+                    step.classList.add('active');
+                }
+            });
+
+            // 更新视频路径
+            if (task.video_path) {
+                document.getElementById('videoPath').textContent = task.video_path;
+                document.getElementById('videoPath').classList.remove('empty');
+                document.getElementById('videoStatus').textContent = '已下载';
+                document.getElementById('videoStatus').className = 'output-status done';
+            }
+
+            // 更新转录
+            if (task.transcript) {
+                document.getElementById('transcriptContent').textContent = task.transcript;
+                document.getElementById('transcriptContent').classList.remove('empty');
+                document.getElementById('transcriptStatus').textContent = '已完成';
+                document.getElementById('transcriptStatus').className = 'output-status done';
+                document.getElementById('transcriptActions').style.display = 'flex';
+            } else if (task.status === 'transcribing') {
+                document.getElementById('transcriptStatus').textContent = '处理中...';
+                document.getElementById('transcriptStatus').className = 'output-status active';
+            }
+
+            // 更新翻译结果
+            if (task.result) {
+                document.getElementById('resultContent').textContent = task.result;
+                document.getElementById('resultContent').classList.remove('empty');
+                document.getElementById('resultStatus').textContent = '已完成';
+                document.getElementById('resultStatus').className = 'output-status done';
+                document.getElementById('resultActions').style.display = 'flex';
+            } else if (task.status === 'translating') {
+                document.getElementById('resultStatus').textContent = '处理中...';
+                document.getElementById('resultStatus').className = 'output-status active';
+            }
+
+            // 错误处理
+            if (task.status === 'error') {
+                showError(task.error);
+            } else {
+                hideError();
             }
         }
 
-        function showResult(text) {
-            progressContainer.classList.remove('active');
-            resultContainer.classList.add('active');
-            resultBox.textContent = text;
-            submitBtn.disabled = false;
-        }
-
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.classList.add('active');
+        function showError(msg) {
+            document.getElementById('errorText').textContent = msg;
+            document.getElementById('errorBox').classList.add('active');
         }
 
         function hideError() {
-            errorMessage.classList.remove('active');
+            document.getElementById('errorBox').classList.remove('active');
         }
 
-        function copyResult() {
-            navigator.clipboard.writeText(resultBox.textContent).then(() => {
-                alert('已复制到剪贴板');
-            });
+        async function resumeTask() {
+            if (!currentTaskId) return;
+            try {
+                const response = await fetch(`/api/task/${currentTaskId}/resume`, { method: 'POST' });
+                if (response.ok) {
+                    hideError();
+                    document.getElementById('submitBtn').disabled = true;
+                    startPolling();
+                }
+            } catch (err) {
+                showError('继续执行失败');
+            }
+        }
+
+        function resetUI() {
+            hideError();
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active', 'done', 'error'));
+            document.getElementById('videoPath').textContent = '等待下载...';
+            document.getElementById('videoPath').classList.add('empty');
+            document.getElementById('videoStatus').textContent = '等待中';
+            document.getElementById('videoStatus').className = 'output-status';
+            document.getElementById('transcriptContent').textContent = '等待转录...';
+            document.getElementById('transcriptContent').classList.add('empty');
+            document.getElementById('transcriptStatus').textContent = '等待中';
+            document.getElementById('transcriptStatus').className = 'output-status';
+            document.getElementById('transcriptActions').style.display = 'none';
+            document.getElementById('resultContent').textContent = '等待翻译...';
+            document.getElementById('resultContent').classList.add('empty');
+            document.getElementById('resultStatus').textContent = '等待中';
+            document.getElementById('resultStatus').className = 'output-status';
+            document.getElementById('resultActions').style.display = 'none';
+        }
+
+        function copyText(id) {
+            const text = document.getElementById(id).textContent;
+            navigator.clipboard.writeText(text).then(() => alert('已复制'));
         }
 
         function downloadResult() {
-            const blob = new Blob([resultBox.textContent], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
+            const text = document.getElementById('resultContent').textContent;
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
             const a = document.createElement('a');
-            a.href = url;
+            a.href = URL.createObjectURL(blob);
             a.download = 'translation.txt';
             a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function resetForm() {
-            resultContainer.classList.remove('active');
-            document.getElementById('videoUrl').value = '';
-            currentTaskId = null;
         }
     </script>
 </body>
