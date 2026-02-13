@@ -49,3 +49,7 @@ tmp/
 # Environment
 .env
 .env.local
+
+# Cookies (contains sensitive data)
+cookies.txt
+cookies/*.txt

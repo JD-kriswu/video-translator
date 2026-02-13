@@ -40,11 +40,28 @@ go build -o video-translator-server ./cmd/server/main.go
 # macOS
 brew install ffmpeg
 pip install openai-whisper
+pip install yt-dlp  # 视频下载工具
 
 # Ubuntu/Debian
 sudo apt install ffmpeg
 pip install openai-whisper
+pip install yt-dlp
 ```
+
+## 提高抖音下载成功率（可选但推荐）
+
+为了提高抖音视频下载成功率，建议配置浏览器 cookies：
+
+1. 使用浏览器插件导出 cookies（推荐 "Get cookies.txt LOCALLY"）
+2. 访问 [www.douyin.com](https://www.douyin.com) 并导出 cookies
+3. 将 `cookies.txt` 保存到项目根目录
+
+详细说明请参考 [COOKIES.md](COOKIES.md)
+
+**成功率对比：**
+- 不使用 cookies：~60%
+- 使用 cookies（未登录）：~70%
+- 使用 cookies（已登录）：~90%
 
 ## 配置
 
@@ -150,3 +167,4 @@ video-translator/
 ## License
 
 MIT
+sk-XIE4889qlgwZ9Ort6RbdBR5idOihzup5EtzJjPXGGZmC2PUm

@@ -11,6 +11,17 @@ import (
 	"strings"
 )
 
+// 全局配置
+var (
+	// 默认 cookies 文件路径
+	defaultCookiesFile = "cookies.txt"
+)
+
+// SetCookiesFile 设置自定义 cookies 文件路径
+func SetCookiesFile(path string) {
+	defaultCookiesFile = path
+}
+
 // Download 从 URL 下载视频文件
 func Download(videoURL string) (string, error) {
 	// 解析 URL
@@ -75,6 +86,11 @@ func downloadHTTP(videoURL, outputPath string) (string, error) {
 
 // downloadWithYtDlp 使用 yt-dlp 下载（支持 YouTube, Bilibili, 抖音等）
 func downloadWithYtDlp(videoURL string) (string, error) {
+	return downloadWithYtDlpEnhanced(videoURL, "")
+}
+
+// downloadWithYtDlpEnhanced 增强版 yt-dlp 下载，支持 cookies 和更多反反爬选项
+func downloadWithYtDlpEnhanced(videoURL string, cookiesFile string) (string, error) {
 	// 检查 yt-dlp 是否可用
 	if _, err := exec.LookPath("yt-dlp"); err != nil {
 		return "", fmt.Errorf("yt-dlp 未安装，请运行: pip install yt-dlp")
@@ -83,16 +99,59 @@ func downloadWithYtDlp(videoURL string) (string, error) {
 	// 输出文件模板
 	outputTemplate := "temp/%(id)s.%(ext)s"
 
-	// 构建 yt-dlp 命令
-	cmd := exec.Command("yt-dlp",
-		"-f", "best[ext=mp4]/best",  // 优先下载 mp4 格式
-		"-o", outputTemplate,        // 输出文件名模板
-		"--no-playlist",             // 不下载播放列表
-		"--no-warnings",             // 不显示警告
+	// 构建基础参数
+	args := []string{
+		"-f", "best[ext=mp4]/best", // 优先下载 mp4 格式
+		"-o", outputTemplate,       // 输出文件名模板
+		"--no-playlist",            // 不下载播放列表
+		"--no-warnings",            // 不显示警告
+	}
+
+	// 抖音专用优化（使用移动端 UA，成功率更高）
+	parsedURL, _ := url.Parse(videoURL)
+	if parsedURL != nil && isDouyinURL(parsedURL.Host) {
+		args = append(args,
+			"--user-agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1",
+			"--referer", "https://www.douyin.com/",
+			"--add-header", "Accept-Language:zh-CN,zh;q=0.9",
+		)
+	} else {
+		// 其他平台使用桌面 UA
+		args = append(args,
+			"--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+		)
+	}
+
+	// 如果提供了 cookies 文件，使用它
+	if cookiesFile == "" {
+		// 尝试使用默认 cookies 文件位置
+		if fileExists(defaultCookiesFile) {
+			cookiesFile = defaultCookiesFile
+		}
+	}
+
+	if cookiesFile != "" && fileExists(cookiesFile) {
+		args = append(args, "--cookies", cookiesFile)
+		fmt.Printf("使用 cookies 文件: %s\n", cookiesFile)
+	}
+
+	// 添加重试和限速机制（避免触发反爬）
+	args = append(args,
+		"--retries", "5",              // 重试5次
+		"--sleep-interval", "2",       // 请求间隔2秒
+		"--max-sleep-interval", "5",   // 最大间隔5秒
+		"--sleep-requests", "1",       // 每次请求后休眠1秒
+		"--socket-timeout", "30",      // Socket 超时30秒
+	)
+
+	// 添加视频 URL 和输出格式
+	args = append(args,
 		"--print", "after_move:filepath", // 打印最终文件路径
 		videoURL,
 	)
 
+	// 执行命令
+	cmd := exec.Command("yt-dlp", args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("yt-dlp 下载失败: %w\n输出: %s", err, string(output))

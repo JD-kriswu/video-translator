@@ -48,14 +48,23 @@ var douyinClient = &http.Client{
 
 // downloadDouyin 抖音视频下载
 func downloadDouyin(videoURL string) (string, error) {
-	// 优先使用 Playwright 方案（更稳定）
-	path, err := downloadDouyinWithPlaywright(videoURL)
+	// 方案1: 使用增强版 yt-dlp（推荐，成功率最高）
+	path, err := downloadWithYtDlpEnhanced(videoURL, "")
 	if err == nil {
+		fmt.Println("✓ 使用 yt-dlp 下载成功")
+		return path, nil
+	}
+	fmt.Printf("yt-dlp 下载失败: %v，尝试 Playwright 方式\n", err)
+
+	// 方案2: Playwright 方案（备用）
+	path, err = downloadDouyinWithPlaywright(videoURL)
+	if err == nil {
+		fmt.Println("✓ 使用 Playwright 下载成功")
 		return path, nil
 	}
 	fmt.Printf("Playwright 下载失败: %v，尝试 API 方式\n", err)
 
-	// 回退到 API 方式
+	// 方案3: API 方式（最后备选）
 	// 1. 解析视频 ID
 	awemeID, err := extractDouyinAwemeID(videoURL)
 	if err != nil {
@@ -74,6 +83,7 @@ func downloadDouyin(videoURL string) (string, error) {
 		return "", fmt.Errorf("下载视频失败: %w", err)
 	}
 
+	fmt.Println("✓ 使用 API 下载成功")
 	return outputPath, nil
 }
 
