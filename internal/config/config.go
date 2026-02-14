@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/JD-kriswu/video-translator/internal/database"
 )
 
 // Config 应用配置
 type Config struct {
 	Transcriber TranscriberConfig `json:"transcriber"`
 	Translator  TranslatorConfig  `json:"translator"`
+	MySQL       database.MySQLConfig `json:"mysql"`
+	Redis       database.RedisConfig `json:"redis"`
 }
 
 // TranscriberConfig 转录配置
@@ -41,37 +45,43 @@ var DefaultConfig = Config{
 		BaseURL:  "https://api.openai.com/v1",
 		Model:    "gpt-4o-mini",
 	},
+	MySQL: database.MySQLConfig{
+		Host:     "127.0.0.1",
+		Port:     3306,
+		User:     "root",
+		Password: "",
+		Database: "video_translator",
+	},
+	Redis: database.RedisConfig{
+		Host:     "127.0.0.1",
+		Port:     6379,
+		Password: "",
+		DB:       0,
+	},
 }
 
 // Load 加载配置文件
 func Load(path string) (*Config, error) {
-	// 如果没有指定路径，使用默认路径
 	if path == "" {
 		path = getDefaultConfigPath()
 	}
 
-	// 检查文件是否存在
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		// 文件不存在，返回默认配置
 		cfg := DefaultConfig
 		return &cfg, nil
 	}
 
-	// 读取配置文件
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("读取配置文件失败: %w", err)
 	}
 
-	// 解析配置
 	var cfg Config
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return nil, fmt.Errorf("解析配置文件失败: %w", err)
 	}
 
-	// 合并默认值
 	mergeDefaults(&cfg)
-
 	return &cfg, nil
 }
 
@@ -81,23 +91,19 @@ func Save(cfg *Config, path string) error {
 		path = getDefaultConfigPath()
 	}
 
-	// 确保目录存在
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("创建配置目录失败: %w", err)
 	}
 
-	// 序列化配置
 	data, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {
 		return fmt.Errorf("序列化配置失败: %w", err)
 	}
 
-	// 写入文件
 	if err := os.WriteFile(path, data, 0644); err != nil {
 		return fmt.Errorf("写入配置文件失败: %w", err)
 	}
-
 	return nil
 }
 
@@ -116,28 +122,34 @@ func CreateExample(path string) error {
 			APIKey:   "your-api-key-here",
 			Model:    "gpt-4o-mini",
 		},
+		MySQL: database.MySQLConfig{
+			Host:     "127.0.0.1",
+			Port:     3306,
+			User:     "root",
+			Password: "your-password",
+			Database: "video_translator",
+		},
+		Redis: database.RedisConfig{
+			Host:     "127.0.0.1",
+			Port:     6379,
+			Password: "",
+			DB:       0,
+		},
 	}
-
 	return Save(&example, path)
 }
 
-// getDefaultConfigPath 获取默认配置文件路径
 func getDefaultConfigPath() string {
-	// 优先使用当前目录
 	if _, err := os.Stat("config.json"); err == nil {
 		return "config.json"
 	}
-
-	// 其次使用用户目录
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "config.json"
 	}
-
 	return filepath.Join(home, ".config", "video-translator", "config.json")
 }
 
-// mergeDefaults 合并默认值
 func mergeDefaults(cfg *Config) {
 	if cfg.Transcriber.Provider == "" {
 		cfg.Transcriber.Provider = DefaultConfig.Transcriber.Provider
@@ -148,7 +160,6 @@ func mergeDefaults(cfg *Config) {
 	if cfg.Transcriber.Model == "" {
 		cfg.Transcriber.Model = DefaultConfig.Transcriber.Model
 	}
-
 	if cfg.Translator.Provider == "" {
 		cfg.Translator.Provider = DefaultConfig.Translator.Provider
 	}
@@ -157,5 +168,11 @@ func mergeDefaults(cfg *Config) {
 	}
 	if cfg.Translator.Model == "" {
 		cfg.Translator.Model = DefaultConfig.Translator.Model
+	}
+	if cfg.MySQL.Host == "" {
+		cfg.MySQL = DefaultConfig.MySQL
+	}
+	if cfg.Redis.Host == "" {
+		cfg.Redis = DefaultConfig.Redis
 	}
 }

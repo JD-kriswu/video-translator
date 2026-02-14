@@ -20,8 +20,21 @@
             max-width: 900px;
             margin: 0 auto;
         }
-        h1 { text-align: center; color: #333; margin-bottom: 8px; font-size: 26px; }
-        .subtitle { text-align: center; color: #666; margin-bottom: 25px; font-size: 14px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; }
+        h1 { color: #333; margin-bottom: 8px; font-size: 26px; }
+        .subtitle { color: #666; font-size: 14px; }
+        .user-info { display: flex; align-items: center; gap: 12px; }
+        .user-info span { color: #667eea; font-weight: 500; }
+        .btn-logout {
+            padding: 8px 16px;
+            background: #f0f0f0;
+            color: #666;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .btn-logout:hover { background: #e0e0e0; }
         
         .form-row { display: flex; gap: 15px; margin-bottom: 20px; }
         .form-group { flex: 1; }
@@ -155,8 +168,16 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎬 Video Translator</h1>
-        <p class="subtitle">将视频内容转录并翻译为目标语言</p>
+        <div class="header">
+            <div>
+                <h1>🎬 Video Translator</h1>
+                <p class="subtitle">将视频内容转录并翻译为目标语言</p>
+            </div>
+            <div class="user-info">
+                <span id="username"></span>
+                <button class="btn-logout" onclick="logout()">登出</button>
+            </div>
+        </div>
 
         <form id="translateForm">
             <div class="form-row">
@@ -253,6 +274,28 @@
     <script>
         let currentTaskId = null;
         let pollInterval = null;
+        let currentUser = null;
+
+        // 检查登录状态
+        (async () => {
+            try {
+                const res = await fetch('/api/me');
+                if (!res.ok) {
+                    window.location.href = '/static/login.html';
+                    return;
+                }
+                const data = await res.json();
+                currentUser = data.user;
+                document.getElementById('username').textContent = currentUser.username;
+            } catch {
+                window.location.href = '/static/login.html';
+            }
+        })();
+
+        async function logout() {
+            await fetch('/api/logout', { method: 'POST' });
+            window.location.href = '/static/login.html';
+        }
 
         const stepOrder = ['downloading', 'extracting', 'transcribing', 'translating', 'done'];
 

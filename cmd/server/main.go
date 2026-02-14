@@ -8,7 +8,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/JD-kriswu/video-translator/internal/auth"
 	"github.com/JD-kriswu/video-translator/internal/config"
+	"github.com/JD-kriswu/video-translator/internal/database"
+	"github.com/JD-kriswu/video-translator/internal/model"
 	"github.com/JD-kriswu/video-translator/internal/server"
 )
 
@@ -21,6 +24,24 @@ func main() {
 	if err != nil {
 		log.Fatalf("加载配置失败: %v", err)
 	}
+
+	// 初始化 MySQL
+	if err := database.InitMySQL(&cfg.MySQL); err != nil {
+		log.Fatalf("初始化 MySQL 失败: %v", err)
+	}
+	log.Println("✅ MySQL 连接成功")
+
+	// 初始化 Redis
+	if err := database.InitRedis(&cfg.Redis); err != nil {
+		log.Fatalf("初始化 Redis 失败: %v", err)
+	}
+	log.Println("✅ Redis 连接成功")
+
+	// 自动迁移数据库
+	if err := model.AutoMigrate(); err != nil {
+		log.Fatalf("数据库迁移失败: %v", err)
+	}
+	log.Println("✅ 数据库迁移完成")
 
 	// 创建 Gin 引擎
 	r := gin.Default()
@@ -37,17 +58,28 @@ func main() {
 	// API 路由
 	api := r.Group("/api")
 	{
-		// 创建翻译任务
-		api.POST("/translate", server.CreateTask(cfg))
+		// 认证相关 (无需登录)
+		api.POST("/register", auth.Register)
+		api.POST("/login", auth.Login)
+		api.POST("/logout", auth.Logout)
+		api.GET("/me", auth.GetCurrentUser)
 
-		// 查询任务状态
-		api.GET("/task/:id", server.GetTaskStatus)
+		// 需要登录的接口
+		protected := api.Group("")
+		protected.Use(auth.AuthMiddleware())
+		{
+			// 创建翻译任务
+			protected.POST("/translate", server.CreateTask(cfg))
 
-		// 继续执行任务
-		api.POST("/task/:id/resume", server.ResumeTask(cfg))
+			// 查询任务状态
+			protected.GET("/task/:id", server.GetTaskStatus)
 
-		// 获取任务结果
-		api.GET("/task/:id/result", server.GetTaskResult)
+			// 继续执行任务
+			protected.POST("/task/:id/resume", server.ResumeTask(cfg))
+
+			// 获取任务结果
+			protected.GET("/task/:id/result", server.GetTaskResult)
+		}
 	}
 
 	// 启动服务

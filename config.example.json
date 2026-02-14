@@ -1,12 +1,27 @@
 {
   "transcriber": {
-    "provider": "local",
-    "model": "base"
+    "provider": "openai",
+    "base_url": "https://api.openai.com/v1",
+    "api_key": "your-api-key-here",
+    "model": "whisper-1"
   },
   "translator": {
     "provider": "openai",
     "base_url": "https://api.openai.com/v1",
     "api_key": "your-api-key-here",
     "model": "gpt-4o-mini"
+  },
+  "mysql": {
+    "host": "127.0.0.1",
+    "port": 3306,
+    "user": "root",
+    "password": "your-password",
+    "database": "video_translator"
+  },
+  "redis": {
+    "host": "127.0.0.1",
+    "port": 6379,
+    "password": "",
+    "db": 0
   }
 }
