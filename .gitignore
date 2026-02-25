@@ -53,3 +53,5 @@ tmp/
 # Cookies (contains sensitive data)
 cookies.txt
 cookies/*.txt
+.context/
+update-context.sh
