@@ -55,3 +55,4 @@ cookies.txt
 cookies/*.txt
 .context/
 update-context.sh
+video-translator-server

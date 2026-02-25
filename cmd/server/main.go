@@ -41,6 +41,9 @@ func main() {
 	if err := model.AutoMigrate(); err != nil {
 		log.Fatalf("数据库迁移失败: %v", err)
 	}
+	if err := model.AutoMigrateTranslation(); err != nil {
+		log.Fatalf("翻译表迁移失败: %v", err)
+	}
 	log.Println("✅ 数据库迁移完成")
 
 	// 创建 Gin 引擎
@@ -79,6 +82,12 @@ func main() {
 
 			// 获取任务结果
 			protected.GET("/task/:id/result", server.GetTaskResult)
+
+			// 用户翻译列表
+			protected.GET("/user/translations", server.GetUserTranslations)
+
+			// 翻译记录详情
+			protected.GET("/translations/:id", server.GetTranslationByID)
 		}
 	}
 
